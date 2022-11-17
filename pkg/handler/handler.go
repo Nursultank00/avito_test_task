@@ -1,24 +1,31 @@
 package handler
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/Nursultank00/avito_test_task/pkg/service"
+	"github.com/gin-gonic/gin"
+)
 
 type Handler struct {
-	services service.Service
+	Services *service.Service
 }
 
 func NewHandler(services *service.Service) *Handler {
-	return &Handler{services: services}
+	return &Handler{Services: services}
 }
 
 func (h *Handler) InitRoutes() *gin.Engine {
 	router := gin.New()
-
-	router.GET("/balance", h.getBalance)
-	router.POST("/accrue", h.accrueBalance)
-	router.POST("/debit", h.debitBalance)
-	router.POST("/reserve", h.reserveBalance)
-	router.POST("/transfer", h.transferBalance)
-	router.POST("/transactions", h.showTransactions)
-
+	balance := router.Group("/balance")
+	{
+		balance.GET("", h.getBalance)
+		balance.POST("/accrue", h.accrueBalance)
+		balance.POST("/debit", h.debitBalance)
+		balance.POST("/reserve", h.reserveBalance)
+	}
+	accounts := router.Group("accounts")
+	{
+		accounts.GET("/all", h.getAllAccounts)
+		accounts.POST("/create-account", h.createAccount)
+	}
 	return router
 }
