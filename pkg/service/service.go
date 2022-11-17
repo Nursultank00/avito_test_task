@@ -5,7 +5,7 @@ import (
 	"github.com/Nursultank00/avito_test_task/pkg/repository"
 )
 
-type Accounts interface {
+type Account interface {
 	createAccount(account models.Account) (int, error)
 	getAllAccounts() ([]models.Account, error)
 	deleteAccount(accountId int) error
@@ -19,7 +19,7 @@ type Balance interface {
 }
 
 type Service struct {
-	Accounts
+	Account
 	Balance
 }
 

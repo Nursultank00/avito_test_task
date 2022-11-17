@@ -1,8 +1,11 @@
 package repository
 
-import "github.com/Nursultank00/avito_test_task/models"
+import (
+	"github.com/Nursultank00/avito_test_task/models"
+	"github.com/jmoiron/sqlx"
+)
 
-type Accounts interface {
+type Account interface {
 	createAccount(account models.Account) (int, error)
 	getAllAccounts() ([]models.Account, error)
 	deleteAccount(accountId int) error
@@ -16,10 +19,10 @@ type Balance interface {
 }
 
 type Repository struct {
-	Accounts
+	Account
 	Balance
 }
 
-func NewRepository() *Repository {
+func NewRepository(db *sqlx.DB) *Repository {
 	return &Repository{}
 }
