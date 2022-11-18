@@ -6,16 +6,18 @@ import (
 )
 
 type Account interface {
-	createAccount(account models.Account) (int, error)
-	getAllAccounts() ([]models.Account, error)
-	deleteAccount(accountId int) error
+	CreateAccount(account_id int) error
+	GetAllAccounts() ([]models.Account, error)
 }
 
 type Balance interface {
-	getBalance(accountId int) (int, error)
-	accrueBalance(accountId, int, amount int, description string) error
-	debitBalance(accountId int, amount int, description string) error
-	reserveBalance(acountId int, amount int, description string) error
+	GetBalance(accountId int) (int, error)
+	AccrueBalance(accountId, int, amount int, description string) error
+	DebitBalance(accountId int, amount int, description string) error
+	ReserveBalance(transId int, accountId int, serviceId int, orderId int, amount int, description string) error
+	ConfirmationBalance(transId int, accountId int, serviceId int, orderId int, amount int, description string) error
+	TransferBalance(receiverId int, senderId int, amount int, description string) error
+	GetTransactionHistory(account_id int) ([]*models.Transactions, error)
 }
 
 type Repository struct {
