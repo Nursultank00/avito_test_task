@@ -21,6 +21,9 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		balance.POST("/accrue", h.accrueBalance)
 		balance.POST("/debit", h.debitBalance)
 		balance.POST("/reserve", h.reserveBalance)
+		balance.POST("/confirmation", h.confirmationBalance)
+		balance.POST("/transfer", h.transferBalance)
+		balance.GET("/transactions", h.getTransactionsHistory)
 	}
 	accounts := router.Group("accounts")
 	{
