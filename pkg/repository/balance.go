@@ -2,7 +2,6 @@ package repository
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/Nursultank00/avito_test_task/models"
 	"github.com/jmoiron/sqlx"
@@ -16,10 +15,10 @@ func NewBalancePostgres(db *sqlx.DB) *BalancePostgres {
 	return &BalancePostgres{db: db}
 }
 
-func (b *BalancePostgres) GetBalance(id int) (map[string]int, error) {
+func (b *BalancePostgres) GetBalance(accountId int) (map[string]int, error) {
 	acc := &models.Account{}
-	query := fmt.Sprint("SELECT * FROM accounts WHERE account_id = $1")
-	if err := b.db.Get(acc, query, id); err != nil {
+	query := "SELECT * FROM accounts WHERE account_id = $1"
+	if err := b.db.Get(acc, query, accountId); err != nil {
 		return nil, err
 	}
 	return map[string]int{
@@ -28,13 +27,13 @@ func (b *BalancePostgres) GetBalance(id int) (map[string]int, error) {
 	}, nil
 }
 
-func (b *BalancePostgres) AccrueBalance(accountId, int, amount int, description string) error {
+func (b *BalancePostgres) AccrueBalance(accountId int, amount int, description string) error {
 	tx, err := b.db.Begin()
 	if err != nil {
 		return err
 	}
 
-	updateQuery := fmt.Sprint("UPDATE accounts SET main_balance = main_balance + $2 WHERE account_id = $1")
+	updateQuery := "UPDATE accounts SET main_balance = main_balance + $2 WHERE account_id = $1"
 
 	if _, err := tx.Exec(updateQuery, accountId, amount); err != nil {
 		tx.Rollback()
@@ -42,10 +41,10 @@ func (b *BalancePostgres) AccrueBalance(accountId, int, amount int, description 
 	}
 
 	transactionQuery := fmt.Sprint("INSERT INTO transactions" +
-		"(account_id, amount, datetime, trans_type, description)" +
-		"VALUES ($1, $2, $3, $4, $5)")
+		"(account_id, amount, trans_type, description)" +
+		"VALUES ($1, $2, $3, $4)")
 
-	_, err = tx.Exec(transactionQuery, accountId, amount, time.Now(), "Accrual", description)
+	_, err = tx.Exec(transactionQuery, accountId, amount, "Accrual", description)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -68,7 +67,7 @@ func (b *BalancePostgres) DebitBalance(accountId int, amount int, description st
 		return err
 	}
 
-	updateQuery := fmt.Sprint("UPDATE accounts SET main_balance = main_balance - $2 WHERE account_id = $1")
+	updateQuery := "UPDATE accounts SET main_balance = main_balance - $2 WHERE account_id = $1"
 
 	if _, err := tx.Exec(updateQuery, accountId, amount); err != nil {
 		tx.Rollback()
@@ -76,10 +75,10 @@ func (b *BalancePostgres) DebitBalance(accountId int, amount int, description st
 	}
 
 	transactionQuery := fmt.Sprint("INSERT INTO transactions" +
-		"(account_id, amount, datetime, trans_type, description)" +
-		"VALUES ($1, $2, $3, $4, $5)")
+		"(account_id, amount, trans_type, description)" +
+		"VALUES ($1, $2, $3, $4)")
 
-	_, err = tx.Exec(transactionQuery, accountId, amount, time.Now(), "Debit", description)
+	_, err = tx.Exec(transactionQuery, accountId, amount, "Debit", description)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -100,14 +99,17 @@ func (b *BalancePostgres) ReserveBalance(transId int, accountId int, serviceId i
 
 	tx, err := b.db.Begin()
 
-	updateMainBalanceQuery := fmt.Sprint("UPDATE accounts SET main_balance = main_balance - $2 WHERE account_id = $1")
+	if err != nil {
+		return err
+	}
+	updateMainBalanceQuery := "UPDATE accounts SET main_balance = main_balance - $2 WHERE account_id = $1"
 
 	if _, err := tx.Exec(updateMainBalanceQuery, accountId, amount); err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	updateReserveBalanceQuery := fmt.Sprint("UPDATE accounts SET reserve_balance = reserve_balance + $2 WHERE account_id = $1")
+	updateReserveBalanceQuery := "UPDATE accounts SET reserve_balance = reserve_balance + $2 WHERE account_id = $1"
 
 	if _, err := tx.Exec(updateReserveBalanceQuery, accountId, amount); err != nil {
 		tx.Rollback()
@@ -115,10 +117,10 @@ func (b *BalancePostgres) ReserveBalance(transId int, accountId int, serviceId i
 	}
 
 	transactionQuery := fmt.Sprint("INSERT INTO transactions" +
-		"(account_id, service_id, order_id, amount, datetime, trans_type, description)" +
-		"VALUES ($1, $2, $3, $4, $5, $6, $7)")
+		"(account_id, service_id, order_id, amount, trans_type, description)" +
+		"VALUES ($1, $2, $3, $4, $5, $6)")
 
-	_, err = tx.Exec(transactionQuery, accountId, serviceId, orderId, amount, time.Now(), "Reservation", description)
+	_, err = tx.Exec(transactionQuery, accountId, serviceId, orderId, amount, "Reservation", description)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -130,18 +132,22 @@ func (b *BalancePostgres) ReserveBalance(transId int, accountId int, serviceId i
 func (b *BalancePostgres) ConfirmationBalance(transId int, accountId int, serviceId int, orderId int, amount int, description string) error {
 	tx, err := b.db.Begin()
 
-	updateReserveBalanceQuery := fmt.Sprint("UPDATE accounts SET reserve_balance = reserve_balance - $2 WHERE account_id = $1")
+	if err != nil {
+		return err
+	}
+
+	updateReserveBalanceQuery := "UPDATE accounts SET reserve_balance = reserve_balance - $2 WHERE account_id = $1"
 
 	if _, err := tx.Exec(updateReserveBalanceQuery, accountId, amount); err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	transactionQuery := fmt.Sprint("INSERT INTO transactions" +
-		"(account_id, service_id, order_id, amount, datetime, trans_type, description)" +
-		"VALUES ($1, $2, $3, $4, $5, $6, $7)")
+	transactionQuery := "INSERT INTO transactions" +
+		"(account_id, service_id, order_id, amount, trans_type, description)" +
+		"VALUES ($1, $2, $3, $4, $5, $6)"
 
-	_, err = tx.Exec(transactionQuery, accountId, serviceId, orderId, amount, time.Now(), "Confirmation of the reservation", description)
+	_, err = tx.Exec(transactionQuery, accountId, serviceId, orderId, amount, "Confirmation of the reservation", description)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -167,8 +173,12 @@ func (b *BalancePostgres) TransferBalance(receiverId int, senderId int, amount i
 
 	tx, err := b.db.Begin()
 
-	updateSenderBalanceQuery := fmt.Sprint("UPDATE accounts SET main_balance = main_balance - $2 WHERE account_id = $1")
-	updateReceiverBalanceQuery := fmt.Sprint("UPDATE accounts SET main_balance = main_balance + $2 WHERE account_id = $1")
+	if err != nil {
+		return err
+	}
+
+	updateSenderBalanceQuery := "UPDATE accounts SET main_balance = main_balance - $2 WHERE account_id = $1"
+	updateReceiverBalanceQuery := "UPDATE accounts SET main_balance = main_balance + $2 WHERE account_id = $1"
 
 	if _, err := tx.Exec(updateSenderBalanceQuery, senderId, amount); err != nil {
 		tx.Rollback()
@@ -180,20 +190,20 @@ func (b *BalancePostgres) TransferBalance(receiverId int, senderId int, amount i
 		return err
 	}
 
-	senderTransactionQuery := fmt.Sprint("INSERT INTO transactions" +
-		"(account_id, amount, datetime, trans_type, description)" +
-		"VALUES ($1, $2, $3, $4, $5)")
-	receiverTransactionQuery := fmt.Sprint("INSERT INTO transactions" +
-		"(account_id, amount, datetime, trans_type, description)" +
-		"VALUES ($1, $2, $3, $4, $5)")
+	senderTransactionQuery := "INSERT INTO transactions" +
+		"(account_id, amount, trans_type, description)" +
+		"VALUES ($1, $2, $3, $4)"
+	receiverTransactionQuery := "INSERT INTO transactions" +
+		"(account_id, amount, trans_type, description)" +
+		"VALUES ($1, $2, $3, $4)"
 
-	_, err = tx.Exec(senderTransactionQuery, senderId, amount, time.Now(), "Send transfer", description)
+	_, err = tx.Exec(senderTransactionQuery, senderId, amount, "Send transfer", description)
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	_, err = tx.Exec(receiverTransactionQuery, receiverId, amount, time.Now(), "Receive transfer", description)
+	_, err = tx.Exec(receiverTransactionQuery, receiverId, amount, "Receive transfer", description)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -204,7 +214,7 @@ func (b *BalancePostgres) TransferBalance(receiverId int, senderId int, amount i
 func (b *BalancePostgres) GetTransactionHistory(account_id int) ([]*models.Transactions, error) {
 	transactions := make([]*models.Transactions, 0)
 
-	query := fmt.Sprintf("SELECT * FROM transactions WHERE account_id = $1")
+	query := "SELECT * FROM transactions WHERE account_id = $1"
 
 	err := b.db.Select(&transactions, query, account_id)
 	if err != nil {

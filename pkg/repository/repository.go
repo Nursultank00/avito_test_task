@@ -7,12 +7,12 @@ import (
 
 type Account interface {
 	CreateAccount(account_id int) error
-	GetAllAccounts() ([]models.Account, error)
+	GetAllAccounts() ([]*models.Account, error)
 }
 
 type Balance interface {
-	GetBalance(accountId int) (int, error)
-	AccrueBalance(accountId, int, amount int, description string) error
+	GetBalance(accountId int) (map[string]int, error)
+	AccrueBalance(accountId int, amount int, description string) error
 	DebitBalance(accountId int, amount int, description string) error
 	ReserveBalance(transId int, accountId int, serviceId int, orderId int, amount int, description string) error
 	ConfirmationBalance(transId int, accountId int, serviceId int, orderId int, amount int, description string) error
@@ -26,5 +26,8 @@ type Repository struct {
 }
 
 func NewRepository(db *sqlx.DB) *Repository {
-	return &Repository{}
+	return &Repository{
+		Account: NewAccountPostgres(db),
+		Balance: NewBalancePostgres(db),
+	}
 }

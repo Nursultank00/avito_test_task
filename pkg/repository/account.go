@@ -26,7 +26,7 @@ func (acc *AccountPostgres) CreateAccount(account_id int) error {
 
 func (acc *AccountPostgres) GetAllAccounts() ([]*models.Account, error) {
 	var all_accounts []*models.Account
-	query := fmt.Sprint("SELECT * FROM accounts")
+	query := "SELECT * FROM accounts"
 	err := acc.db.Select(&all_accounts, query)
 	if err != nil {
 		return nil, err
