@@ -11,6 +11,7 @@ import (
 	"github.com/Nursultank00/avito_test_task/pkg/handler"
 	"github.com/Nursultank00/avito_test_task/pkg/repository"
 	"github.com/Nursultank00/avito_test_task/pkg/service"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/spf13/viper"
 )
@@ -20,13 +21,17 @@ func main() {
 		log.Fatalf("error occured while initializing config: %s", err.Error())
 	}
 
+	if err := godotenv.Load(); err != nil {
+		log.Fatalf("error occured while reading env variables: %s", err.Error())
+	}
+
 	db, err := repository.NewPostgresDB(&repository.Config{
 		Host:     viper.GetString("db.host"),
 		Port:     viper.GetString("db.port"),
 		Username: viper.GetString("db.username"),
 		DBName:   viper.GetString("db.dbname"),
 		SSLMode:  viper.GetString("db.sslmode"),
-		Password: viper.GetString("db.password"),
+		Password: os.Getenv("DB_PASSWORD"),
 	})
 
 	if err != nil {
